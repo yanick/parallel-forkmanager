@@ -6,11 +6,11 @@ Parallel::ForkManager - A simple parallel processing fork manager
 
   use Parallel::ForkManager;
 
-  $pm=new Parallel::ForkManager($MAX_PROCESSES);
+  $pm = new Parallel::ForkManager($MAX_PROCESSES);
 
   foreach $data (@all_data) {
     # Forks and returns the pid for the child:
-    my $pid=$pm->start and next; 
+    my $pid = $pm->start and next; 
 
     ... do some work with $data in the child process ...
 
@@ -19,9 +19,9 @@ Parallel::ForkManager - A simple parallel processing fork manager
 
 =head1 DESCRIPTION
 
-This module intends to help parallel-processing operations that can be done parallely, but we want to limit how much process forks for the parallel processing. Typical use is a downloader, which got thousands of links, and tries to download them.
+This module is intended for use in operations that can be done in parallel where the number of processes to be forked off should be limited. Typical use is a downloader which will be retrieving hundreds/thousands of files.
 
-The code for the downloader could look like this:
+The code for a downloader would look something like this:
 
   use LWP::Simple;
   use Parallel::ForkManager;
@@ -37,12 +37,12 @@ The code for the downloader could look like this:
   ...
 
   # Max 30 processes for parallel download
-  my $pm=new Parallel::ForkManager(30); 
+  my $pm = new Parallel::ForkManager(30); 
 
   foreach my $linkarray (@links) {
     $pm->start and next; # do the fork
 
-    my ($link,$fn)=@$linkarray;
+    my ($link,$fn) = @$linkarray;
     warn "Cannot get $fn from $link"
       if getstore($link,$fn) != RC_OK;
 
@@ -50,13 +50,13 @@ The code for the downloader could look like this:
   }
   $pm->wait_all_childs;
 
-First you need to instantiate the ForkManager with the "new" constructor. You must specify how much parallel process is allowed. If you specify 0, then NO fork will be done, it is good for debugging purposes.
+First you need to instantiate the ForkManager with the "new" constructor. You must specify the maximum number of processes to be created. If you specify 0, then NO fork will be done; this is good for debugging purposes.
 
-Then $pm->start do the fork. $pm returns 0 for the child process, and child pid for the parent process. That's why "and next" skips the internal loop in the parent process. NOTE: $pm->start dies if the fork failed.
+Next, use $pm->start to do the fork. $pm returns 0 for the child process, and child pid for the parent process (see also L<perlfunc(1p)/fork()>). The "and next" skips the internal loop in the parent process. NOTE: $pm->start dies if the fork fails.
 
-$pm->finish terminates the child process, if a fork has been done in the "start".
+$pm->finish terminates the child process (assuming a fork was done in the "start").
 
-NOTE: You cannot use $pm->start, if you already in the child process. If you want to manage another set of subprocesses in the child process, then you must instantiate another Process::ForkManager object!
+NOTE: You cannot use $pm->start if you are already in the child process. If you want to manage another set of subprocesses in the child process, you must instantiate another Parallel::ForkManager object!
 
 =head1 METHODS
 
@@ -64,25 +64,23 @@ NOTE: You cannot use $pm->start, if you already in the child process. If you wan
 
 =item new $processes
 
-Instantiate a new Process::ForkManager object. You must specify how much child process can be active parallelly. If you specify , then no child process will be forked, this is intended for debugging purposes.
+Instantiate a new Parallel::ForkManager object. You must specify the maximum number of children to fork off. If you specify 0 (zero), then no children will be forked. This is intended for debugging purposes.
 
 =item start
 
-This method does the fork. It returns the pid of the child process for the parent, and 0 for the child process. If the $processes parameter for the constructor is 0, then it simply returns 0, assuming that you are in the child process. If you write your code like the above, then you can use the program in single-process mode. All you need to do is make sure after $pm->finish the process can continue the work.
+This method does the fork. It returns the pid of the child process for the parent, and 0 for the child process. If the $processes parameter for the constructor is 0 then, assuming you're in the child process, $pm->start simply returns 0.
 
 =item finish
 
 Closes the child process by exiting. If you use the program in debug mode ($processes == 0), this method doesn't do anything.
 
-=item wait_all_child
+=item wait_all_childs
 
 You can call this method to wait for all the processes which has been forked. This is a blocking wait.
 
 =head1 EXPERIMENTAL FEATURES
 
-There are callbacks in the code, which can be called on events like starting a process or on finish. This code is not tested at all, so that's why it is not in the documentation. If you want to use that, please look at the code, and test it. Feel free to send me patches if you find something wrong.
-  
-=back
+There are callbacks in the code, which can be called on events like starting a process or on finish. This code is not tested at all, hence the lack of documentation. If you want to try these features, please look at the code and test them. Feel free to send me patches if you find something wrong.
 
 =head1 COPYRIGHT
 
@@ -94,17 +92,21 @@ All right reserved. This program is free software; you can redistribute it and/o
 
 dLux (Szabó, Balázs) <dlux@kapu.hu>
 
+Noah Robin <sitz@onastick.net> (documentation tweaks)
+
+
 =cut
 
 package Parallel::ForkManager;
 use POSIX ":sys_wait_h";
 use strict;
 use vars qw($VERSION);
-$VERSION='0.5';
+$VERSION='0.6';
 
 sub new { my ($c,$processes)=@_;
   my $h={
-    max_proc => $processes
+    max_proc => $processes,
+    current  => 0,
   };
   return bless($h,ref($c)||$c);
 };
@@ -116,7 +118,7 @@ sub run_on_finish { my ($s,$code,$pid)=@_;
 sub start { my ($s)=@_;
   die "Cannot start another process while you are in the child process"
     if $s->{in_child};
-  while ($s->{current}>=$s->{max_proc}) {
+  while ( ($s->{current}||=0) >=$s->{max_proc}) {
     $s->on_wait;
     $s->wait_one_child;
   };
@@ -146,8 +148,8 @@ sub wait_childs { my ($s)=@_;
   } while $kid > 0;
 };
 
-sub wait_one_child { my ($s,$par)=@_;
-  my $kid = waitpid(-1,$par);
+sub wait_one_child ($;$) { my ($s,$par)=@_;
+  my $kid = waitpid(-1,$par||=0);
   if ($kid>0) {
     $s->on_finish($kid);
     $s->{current}--;
