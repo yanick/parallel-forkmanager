@@ -4,3 +4,5 @@ ForkManager.pm
 MANIFEST
 Makefile.PL
 test.pl
+ForkManager/parallel_get.pl
+ForkManager/callback.pl

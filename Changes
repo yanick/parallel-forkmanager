@@ -1,5 +1,11 @@
 Revision history for Perl extension Parallel::ForkManager.
 
+0.7  Wed Apr  4 12:52:53 CEST 2001
+	- callback code tested, exit status return (Chuck, dLux)
+	- added parallel_get.pl, a parallel webget example (dLux)
+	- added callbacks.pl, a callback example (Chuck, dLux)
+	- documentation updtes (Chuck, dLux)
+
 0.6  Thu Nov 30 11:56:15 CET 2000
 	- documentation tweak fixes by Noah Robin
 	- warning elimination fixes
