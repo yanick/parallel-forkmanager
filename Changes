@@ -1,0 +1,5 @@
+Revision history for Perl extension Parallel::ForkManager.
+
+1.0  Wed Oct 18 16:24:59 2000
+	- original version; created by h2xs 1.19
+
