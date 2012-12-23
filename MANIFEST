@@ -1,8 +1,17 @@
-TODO
 Changes
-ForkManager.pm
-MANIFEST
+examples/callback.pl
+examples/callback_data.pl
+examples/parallel_get.pl
+lib/Parallel/ForkManager.pm
 Makefile.PL
-test.pl
-ForkManager/parallel_get.pl
-ForkManager/callback.pl
+MANIFEST			This list of files
+MANIFEST.SKIP
+README
+t/00-load.t
+t/01-utf8-all.t
+t/02-callback.t
+t/03-callback-data.t
+t/callback.txt
+t/callback_data.txt
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)

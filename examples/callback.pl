@@ -3,11 +3,11 @@ use lib '.';
 use strict;
 use Parallel::ForkManager;
 
-my $max_procs = 5;
-my @names = qw( Fred Jim Lily Steve Jessica Bob Dave Christine Rico Sara );
+my $max_procs = 3;
+my @names = qw( Fred Jim Lily Steve Jessica Bob );
 # hash to resolve PID's back to child specific information
 
-my $pm =  new Parallel::ForkManager($max_procs);
+my $pm = Parallel::ForkManager->new($max_procs);
 
 # Setup a callback for when a child finishes up so we can
 # get it's exit code
@@ -27,7 +27,8 @@ $pm->run_on_start(
 $pm->run_on_wait(
   sub {
     print "** Have to wait for one children ...\n"
-  }
+  },
+  0.5,
 );
 
 foreach my $child ( 0 .. $#names ) {
