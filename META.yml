@@ -25,4 +25,4 @@ requires:
   Storable: 0
 resources:
   repository: http://code.google.com/p/perl-parallel-forkmanager/
-version: v1.0.0
+version: 1.01
