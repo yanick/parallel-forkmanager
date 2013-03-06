@@ -75,7 +75,7 @@ C for child.
 
 =over 5
 
-=item new $processes [, $tempdir]  # P
+=item new $processes
 
 Instantiate a new Parallel::ForkManager object. You must specify the maximum
 number of children to fork off. If you specify 0 (zero), then no children
@@ -83,13 +83,13 @@ will be forked. This is intended for debugging purposes.
 
 The optional second parameter, $tempdir, is only used if you want the
 children to send back a reference to some data (see RETRIEVING DATASTRUCTURES
-below). If not provided, it is set to $L<File::Temp::tempdir().
-
+below). If not provided, it is set to $L<File::Spec>->tmpdir().
+ 
 The new method will die if the temporary directory does not exist or it is not
 a directory, whether you provided this parameter or the
-$L<File::Temp::tempdir() is used.
+$L<File::Spec>->tmpdir() is used.
 
-=item start [ $process_identifier ]  # P
+=item start [ $process_identifier ]
 
 This method does the fork. It returns the pid of the child process for
 the parent, and 0 for the child process. If the $processes parameter
@@ -100,7 +100,7 @@ An optional $process_identifier can be provided to this method... It is used by
 the "run_on_finish" callback (see CALLBACKS) for identifying the finished
 process.
 
-=item finish [ $exit_code [, $data_structure_reference] ]  # C
+=item finish [ $exit_code [, $data_structure_reference] ]
 
 Closes the child process by exiting and accepts an optional exit code
 (default exit code is 0) which can be retrieved in the parent via callback.
@@ -111,11 +111,11 @@ it's contents back to the parent. If you use the program in debug mode
 If the $data_structure_reference is provided, then it is serialized and
 passed to the parent process. See RETRIEVING DATASTRUCTURES for more info.
 
-=item set_max_procs $processes  # P
+=item set_max_procs $processes
 
 Allows you to set a new maximum number of children to maintain.
 
-=item wait_all_children  # P
+=item wait_all_children
 
 You can call this method to wait for all the processes which have been
 forked. This is a blocking wait.
@@ -131,7 +131,7 @@ The callbacks can be defined with the following methods:
 
 =over 4
 
-=item run_on_finish $code [, $pid ]  # P
+=item run_on_finish $code [, $pid ]
 
 You can define a subroutine which is called when a child is terminated. It is
 called in the parent process.
@@ -145,7 +145,7 @@ The paremeters of the $code are the following:
   - core dump (1 if there was core dump at exit)
   - datastructure reference or undef (see RETRIEVING DATASTRUCTURES)
 
-=item run_on_start $code  # P
+=item run_on_start $code
 
 You can define a subroutine which is called when a child is started. It called
 after the successful startup of a child in the parent process.
@@ -155,7 +155,7 @@ The parameters of the $code are the following:
   - pid of the process which has been started
   - identification of the process (if provided in the "start" method)
 
-=item run_on_wait $code, [$period]  # P
+=item run_on_wait $code, [$period]
 
 You can define a subroutine which is called when the child process needs to wait
 for the startup. If $period is not defined, then one call is done per
@@ -423,6 +423,8 @@ and/or modify it under the same terms as Perl itself.
 
 =head1 CREDITS
 
+  Gabor Szabo (szabgab@cpn.org)  (co-maintainer)
+  Michael Gang (bug report)
   Noah Robin <sitz@onastick.net> (documentation tweaks)
   Chuck Hirstius <chirstius@megapathdsl.net> (callback exit status, example)
   Grant Hopwood <hopwoodg@valero.com> (win32 port)
@@ -439,11 +441,11 @@ use File::Temp ();
 use File::Path ();
 use strict;
 use vars qw($VERSION);
-$VERSION="1.02";
+$VERSION="1.03";
 $VERSION = eval $VERSION;
 
 sub new {
-  my ($c,$processes, $tempdir)=@_;
+  my ($c,$processes,$tempdir)=@_;
 
   my $h={
     max_proc   => $processes,
@@ -452,11 +454,16 @@ sub new {
     parent_pid => $$,
   };
   
+
   # determine temporary directory for storing data structures
   # add it to Parallel::ForkManager object so children can use it
   # We don't let it clean up so it won't do it in the child process
   # but we have our own DESTROY to do that.
-  $h->{tempdir} = File::Temp::tempdir(CLEANUP => 0);
+  if (not defined($tempdir) or not length($tempdir)) {
+    $tempdir = File::Temp::tempdir(CLEANUP => 0);
+  }
+  die qq|Temporary directory "$tempdir" doesn't exist or is not a directory.| unless (-e $tempdir && -d _);  # ensure temp dir exists and is indeed a directory
+  $h->{tempdir} = $tempdir;
   
   return bless($h,ref($c)||$c);
 };
