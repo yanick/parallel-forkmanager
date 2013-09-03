@@ -83,11 +83,10 @@ will be forked. This is intended for debugging purposes.
 
 The optional second parameter, $tempdir, is only used if you want the
 children to send back a reference to some data (see RETRIEVING DATASTRUCTURES
-below). If not provided, it is set to $L<File::Spec>->tmpdir().
- 
+below). If not provided, it is set via a call to L<File::Temp>::tempdir().
+
 The new method will die if the temporary directory does not exist or it is not
-a directory, whether you provided this parameter or the
-$L<File::Spec>->tmpdir() is used.
+a directory.
 
 =item start [ $process_identifier ]
 
@@ -136,7 +135,7 @@ The callbacks can be defined with the following methods:
 You can define a subroutine which is called when a child is terminated. It is
 called in the parent process.
 
-The paremeters of the $code are the following:
+The parameters of the $code are the following:
 
   - pid of the process, which is terminated
   - exit code of the program
@@ -160,8 +159,8 @@ The parameters of the $code are the following:
 You can define a subroutine which is called when the child process needs to wait
 for the startup. If $period is not defined, then one call is done per
 child. If $period is defined, then $code is called periodically and the
-module waits for $period seconds betwen the two calls. Note, $period can be
-fractional number also. The exact "$period seconds" is not guarranteed,
+module waits for $period seconds between the two calls. Note, $period can be
+fractional number also. The exact "$period seconds" is not guaranteed,
 signals can shorten and the process scheduler can make it longer (on busy
 systems).
 
@@ -278,14 +277,14 @@ In this simple example, each child sends back a string reference.
 
   use Parallel::ForkManager 0.7.6;
   use strict;
-  
+
   my $pm = Parallel::ForkManager->new(2, '/server/path/to/temp/dir/');
-  
+
   # data structure retrieval and handling
   $pm -> run_on_finish ( # called BEFORE the first call to start()
     sub {
       my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_structure_reference) = @_;
-  
+
       # retrieve data structure from child
       if (defined($data_structure_reference)) {  # children are not forced to send anything
         my $string = ${$data_structure_reference};  # child passed a string reference
@@ -295,19 +294,19 @@ In this simple example, each child sends back a string reference.
       }
     }
   );
-  
+
   # prep random statement components
   my @foods = ('chocolate', 'ice cream', 'peanut butter', 'pickles', 'pizza', 'bacon', 'pancakes', 'spaghetti', 'cookies');
   my @preferences = ('loves', q|can't stand|, 'always wants more', 'will walk 100 miles for', 'only eats', 'would starve rather than eat');
-  
+
   # run the parallel processes
   my $person = '';
   foreach $person (qw(Fred Wilma Ernie Bert Lucy Ethel Curly Moe Larry)) {
     $pm->start() and next;
-  
+
     # generate a random statement about food preferences
     my $statement = $person . ' ' . $preferences[int(rand @preferences)] . ' ' . $foods[int(rand @foods)];
-  
+
     # send it back to the parent process
     $pm->finish(0, \$statement);  # note that it's a scalar REFERENCE, not the scalar itself
   }
@@ -322,15 +321,15 @@ process whatever is retrieved.
   use Parallel::ForkManager 0.7.6;
   use Data::Dumper;  # to display the data structures retrieved.
   use strict;
-  
+
   my $pm = Parallel::ForkManager->new(20);  # using the system temp dir $L<File::Temp::tempdir()
-  
+
   # data structure retrieval and handling
   my %retrieved_responses = ();  # for collecting responses
   $pm -> run_on_finish (
     sub {
       my ($pid, $exit_code, $ident, $exit_signal, $core_dump, $data_structure_reference) = @_;
-  
+
       # see what the child sent us, if anything
       if (defined($data_structure_reference)) {  # test rather than assume child sent anything
         my $reftype = ref($data_structure_reference);
@@ -338,15 +337,15 @@ process whatever is retrieved.
         if (1) {  # simple on/off switch to display the contents
           print &Dumper($data_structure_reference) . qq|end of "$ident" sent structure\n\n|;
         }
-        
+
         # we can also collect retrieved data structures for processing after all children have exited
         $retrieved_responses{$ident} = $data_structure_reference;
       } else {
-        print qq|ident "$ident" did not send anything.\n\n|;  
+        print qq|ident "$ident" did not send anything.\n\n|;
       }
     }
   );
-  
+
   # generate a list of instructions
   my @instructions = (  # a unique identifier and what the child process should send
     {'name' => '%ENV keys as a string', 'send' => 'keys'},
@@ -356,23 +355,23 @@ process whatever is retrieved.
     {'name' => 'Invalid send instructions', 'send' => 'Na Na Nana Na'},
     {'name' => 'ENV values in an array', 'send' => 'values'},
   );
-  
+
   my $instruction = '';
   foreach $instruction (@instructions) {
     $pm->start($instruction->{'name'}) and next;  # this time we are using an explicit, unique child process identifier
-  
+
     # last step in child processing
     $pm->finish(0) unless $instruction->{'send'};  # no data structure is sent unless this child is told what to send.
-    
+
     if ($instruction->{'send'} eq 'keys') {
       $pm->finish(0, \join(', ', keys %ENV));
-      
+
     } elsif ($instruction->{'send'} eq 'values') {
       $pm->finish(0, [values %ENV]);  # kinda useless without knowing which keys they belong to...
-      
+
     } elsif ($instruction->{'send'} eq 'all') {
       $pm->finish(0, \%ENV);  # remember, we are not "returning" anything, just copying the hash to disc
-    
+
     # demonstrate clearly that the child determines what type of reference to send
     } elsif ($instruction->{'send'} eq 'random') {
       my $string = q|I'm just a string.|;
@@ -382,14 +381,14 @@ process whatever is retrieved.
       $pm->finish(0, \$string) if ($return_choice eq 'string');
       $pm->finish(0, \@array) if ($return_choice eq 'array');
       $pm->finish(0, \%hash) if ($return_choice eq 'hash');
-      
+
     # as a responsible child, inform parent that their instruction was invalid
-    } else {  
+    } else {
       $pm->finish(0, \qq|Invalid instructions: "$instruction->{'send'}".|);  # ordinarily I wouldn't include invalid input in a response...
     }
   }
   $pm->wait_all_children;  # blocks until all forked processes have exited
-  
+
   # post fork processing of returned data structures
   for (sort keys %retrieved_responses) {
     print qq|Post processing "$_"...\n|;
@@ -412,18 +411,20 @@ processes, although I don't think it makes sense.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2000-2010 SzabÛ, Bal·zs (dLux)
+=encoding utf8
+
+Copyright (c) 2000-2010 Szab√≥, Bal√°zs (dLux)
 
 All right reserved. This program is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
 
 =head1 AUTHOR
 
-  dLux (SzabÛ, Bal·zs) <dlux@dlux.hu>
+  dLux (Szab√≥, Bal√°zs) <dlux@dlux.hu>
 
 =head1 CREDITS
 
-  Gabor Szabo (szabgab@cpn.org)  (co-maintainer)
+  G√°bor Szab√≥ (szabgab@cpn.org)  (co-maintainer)
   Michael Gang (bug report)
   Noah Robin <sitz@onastick.net> (documentation tweaks)
   Chuck Hirstius <chirstius@megapathdsl.net> (callback exit status, example)
@@ -441,7 +442,7 @@ use File::Temp ();
 use File::Path ();
 use strict;
 use vars qw($VERSION);
-$VERSION="1.03";
+$VERSION="1.04";
 $VERSION = eval $VERSION;
 
 sub new {
@@ -453,7 +454,7 @@ sub new {
     in_child   => 0,
     parent_pid => $$,
   };
-  
+
 
   # determine temporary directory for storing data structures
   # add it to Parallel::ForkManager object so children can use it
@@ -464,7 +465,7 @@ sub new {
   }
   die qq|Temporary directory "$tempdir" doesn't exist or is not a directory.| unless (-e $tempdir && -d _);  # ensure temp dir exists and is indeed a directory
   $h->{tempdir} = $tempdir;
-  
+
   return bless($h,ref($c)||$c);
 };
 
@@ -549,7 +550,7 @@ sub wait_one_child {
       if (not $retrieved or $@) {
         warn(qq|The storable module was unable to retrieve the child's data structure from the temporary file "$storable_tempfile":  | . join(', ', $@));
       }
-      
+
       # clean up after ourselves
       unlink $storable_tempfile;
     }

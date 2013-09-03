@@ -4,7 +4,7 @@
       "Balazs Szabo (dLux)"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.64, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.120921",
    "license" : [
       "perl_5"
    ],
@@ -32,7 +32,7 @@
       },
       "runtime" : {
          "requires" : {
-            "File::Path" : "0",
+            "File::Path" : "2",
             "File::Spec" : "0",
             "File::Temp" : "0",
             "POSIX" : "0",
@@ -46,7 +46,7 @@
          "url" : "http://code.google.com/p/perl-parallel-forkmanager/"
       }
    },
-   "version" : "1.03",
+   "version" : "1.04",
    "x_contributors" : [
       "SZABGAB",
       "Michael Gang",

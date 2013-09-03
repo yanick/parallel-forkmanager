@@ -1,6 +1,8 @@
 use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
+
+system qq{$^X -MPod::Text -e "pod2text(q(lib/Parallel/ForkManager.pm))" > README};
 WriteMakefile(
     NAME	      => 'Parallel::ForkManager',
     VERSION_FROM  => 'lib/Parallel/ForkManager.pm', # finds $VERSION
@@ -12,7 +14,7 @@ WriteMakefile(
            'Storable'       => 0,
            'File::Spec'     => 0,
            'File::Temp'     => 0,
-           'File::Path'     => 0,
+           'File::Path'     => 2.0,
     },
     BUILD_REQUIRES => {
            'Test::More'     => '0.80',
