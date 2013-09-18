@@ -424,7 +424,7 @@ and/or modify it under the same terms as Perl itself.
 
 =head1 CREDITS
 
-  Gábor Szabó (szabgab@cpn.org)  (co-maintainer)
+  Gábor Szabó (szabgab@cpan.org)  (co-maintainer)
   Michael Gang (bug report)
   Noah Robin <sitz@onastick.net> (documentation tweaks)
   Chuck Hirstius <chirstius@megapathdsl.net> (callback exit status, example)
@@ -442,7 +442,7 @@ use File::Temp ();
 use File::Path ();
 use strict;
 use vars qw($VERSION);
-$VERSION="1.04";
+$VERSION="1.05";
 $VERSION = eval $VERSION;
 
 sub new {
@@ -453,6 +453,7 @@ sub new {
     processes  => {},
     in_child   => 0,
     parent_pid => $$,
+    auto_cleanup => ($tempdir ? 1 : 0),
   };
 
 
@@ -659,7 +660,7 @@ sub _NT_waitpid {
 sub DESTROY {
   my ($self) = @_;
 
-  if ($self->{parent_pid} == $$ && -d $self->{tempdir}) {
+  if ($self->{auto_cleanup} && $self->{parent_pid} == $$ && -d $self->{tempdir}) {
     File::Path::remove_tree($self->{tempdir});
   }
 }

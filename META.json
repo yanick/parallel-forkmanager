@@ -46,7 +46,7 @@
          "url" : "http://code.google.com/p/perl-parallel-forkmanager/"
       }
    },
-   "version" : "1.04",
+   "version" : "1.05",
    "x_contributors" : [
       "SZABGAB",
       "Michael Gang",
