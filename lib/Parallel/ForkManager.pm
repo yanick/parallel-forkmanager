@@ -442,7 +442,7 @@ use File::Temp ();
 use File::Path ();
 use strict;
 use vars qw($VERSION);
-$VERSION="1.05";
+$VERSION="1.06";
 $VERSION = eval $VERSION;
 
 sub new {
@@ -453,7 +453,7 @@ sub new {
     processes  => {},
     in_child   => 0,
     parent_pid => $$,
-    auto_cleanup => ($tempdir ? 1 : 0),
+    auto_cleanup => ($tempdir ? 0 : 1),
   };
 
 
